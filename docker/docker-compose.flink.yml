@@ -1,0 +1,34 @@
+# Flink: a JobManager (the coordinator) and one TaskManager (the worker), sized for a laptop.
+# Always started together with the Kafka and CDC files (see scripts/flink_up.sh).
+x-flink-settings: &flink-settings
+  FLINK_PROPERTIES: |
+    jobmanager.rpc.address: jobmanager
+    jobmanager.memory.process.size: 800m
+    taskmanager.memory.process.size: 1280m
+    taskmanager.memory.managed.fraction: 0.1
+    taskmanager.numberOfTaskSlots: 4
+    parallelism.default: 1
+    execution.checkpointing.interval: 10s
+
+services:
+  jobmanager:
+    build: ./flink
+    image: streaming-flink:2.0
+    container_name: flink-jobmanager
+    command: jobmanager
+    ports:
+      - "8091:8081"                  # Flink web UI (8081 is Schema Registry)
+    environment: *flink-settings
+    volumes:
+      - ../flink/sql:/opt/flink/sql  # your SQL files, visible inside the container
+    depends_on:
+      - kafka
+
+  taskmanager:
+    build: ./flink
+    image: streaming-flink:2.0
+    container_name: flink-taskmanager
+    command: taskmanager
+    environment: *flink-settings
+    depends_on:
+      - jobmanager
