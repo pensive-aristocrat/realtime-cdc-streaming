@@ -20,7 +20,8 @@ services:
       - "8091:8081"                  # Flink web UI (8081 is Schema Registry)
     environment: *flink-settings
     volumes:
-      - ../flink/sql:/opt/flink/sql  # your SQL files, visible inside the container
+      - ../flink/sql:/opt/flink/sql  # Your SQL files, visible inside the container.
+      - ${HOME}/streaming-warehouse:/opt/warehouse  # The Iceberg lakehouse folder.
     depends_on:
       - kafka
 
@@ -30,5 +31,7 @@ services:
     container_name: flink-taskmanager
     command: taskmanager
     environment: *flink-settings
+    volumes:
+      - ${HOME}/streaming-warehouse:/opt/warehouse  # The TaskManager writes the Iceberg data files.
     depends_on:
       - jobmanager
