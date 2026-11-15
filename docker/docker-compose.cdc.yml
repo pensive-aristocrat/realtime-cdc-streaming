@@ -1,0 +1,43 @@
+# Change data capture: the shop database + Kafka Connect with Debezium.
+# Always started together with docker-compose.kafka.yml (see scripts/cdc_up.sh).
+services:
+  postgres:
+    image: postgres:16
+    container_name: cdc-postgres
+    ports:
+      - "5434:5432"                  # 5434 on your laptop, so it never clashes with another PostgreSQL
+    environment:
+      POSTGRES_DB: shop
+      POSTGRES_USER: shop
+      POSTGRES_PASSWORD: shop
+    command: ["postgres", "-c", "wal_level=logical"]   # write enough detail in the WAL for CDC
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - cdc-pgdata:/var/lib/postgresql/data
+
+  connect:
+    image: quay.io/debezium/connect:3.7.0.Final
+    container_name: connect
+    depends_on:
+      - kafka
+      - postgres
+    ports:
+      - "8083:8083"                  # Kafka Connect REST API
+    environment:
+      BOOTSTRAP_SERVERS: kafka:29092                 # inside Docker: internal listener
+      GROUP_ID: connect-cluster
+      CONFIG_STORAGE_TOPIC: connect_configs          # Connect keeps its own state in Kafka topics
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: connect_statuses
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      HEAP_OPTS: "-Xms256m -Xmx512m"
+
+  kafka-ui:
+    environment:                     # added to the settings in docker-compose.kafka.yml
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: debezium
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://connect:8083
+
+volumes:
+  cdc-pgdata:
