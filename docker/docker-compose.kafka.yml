@@ -20,6 +20,20 @@ services:
       KAFKA_NUM_PARTITIONS: 3                         # default for new topics
       KAFKA_HEAP_OPTS: "-Xms512m -Xmx512m"            # keep memory small on a laptop
 
+  schema-registry:
+    image: confluentinc/cp-schema-registry:8.3.1
+    container_name: schema-registry
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"                  # REST API for schemas
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka:29092   # inside Docker: internal listener
+      SCHEMA_REGISTRY_KAFKASTORE_TOPIC_REPLICATION_FACTOR: 1                  # schemas live in the _schemas topic
+      SCHEMA_REGISTRY_HEAP_OPTS: "-Xms256m -Xmx256m"
+
   kafka-ui:
     image: kafbat/kafka-ui:latest
     ports:
@@ -27,5 +41,7 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
     depends_on:
       - kafka
+      - schema-registry

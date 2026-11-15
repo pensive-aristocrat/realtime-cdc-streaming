@@ -1,0 +1,19 @@
+{
+  "type": "record",
+  "name": "WikiEdit",
+  "namespace": "streaming.wikimedia",
+  "doc": "One change to a Wikimedia wiki, cleaned from the recentchange stream.",
+  "fields": [
+    {"name": "event_id",    "type": ["null", "long"], "default": null, "doc": "Wikimedia's change id (missing for some log events)"},
+    {"name": "wiki",        "type": "string",  "doc": "Wiki code, for example enwiki"},
+    {"name": "server_name", "type": "string",  "doc": "Site, for example en.wikipedia.org"},
+    {"name": "title",       "type": "string"},
+    {"name": "user",        "type": "string"},
+    {"name": "bot",         "type": "boolean"},
+    {"name": "change_type", "type": "string",  "doc": "edit, new, log, categorize"},
+    {"name": "namespace",   "type": "int",     "doc": "0 = article, other numbers = talk, user, file pages"},
+    {"name": "length_old",  "type": ["null", "int"], "default": null},
+    {"name": "length_new",  "type": ["null", "int"], "default": null},
+    {"name": "event_time",  "type": {"type": "long", "logicalType": "timestamp-millis"}}
+  ]
+}
